@@ -1,12 +1,23 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, InputContent } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env["GOOGLE_API_KEY"] as string);
 
+const instructionMessage: InputContent[] = [
+  {
+    role: "user",
+    parts: "You are a code generator, You must answer only in markdown code snippets. Use code comments for explanations."
+  },
+  {
+    role: "model",
+    parts: "ok"
+  }
+]
+
 export async function POST(req: Request) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro"});
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
     const { userId } = auth();
     const body = await req.json();
@@ -22,10 +33,10 @@ export async function POST(req: Request) {
 
     if (!messages) {
       return new NextResponse("Messages are required", { status: 400 });
-    } 
-
+    }
+    
     const chat = model.startChat({
-        history: messages,
+        history: [...instructionMessage,...messages]
     });
 
     const result = await chat.sendMessage(userMessage.parts);
@@ -35,7 +46,7 @@ export async function POST(req: Request) {
     return NextResponse.json({role:'model',parts: text});
 
   } catch (error) {
-    console.log("[CONVERSATIONAL_ERROR]", error);
+    console.log("[CODE_ERROR]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }
