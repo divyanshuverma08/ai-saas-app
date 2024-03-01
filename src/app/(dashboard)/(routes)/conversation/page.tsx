@@ -19,10 +19,14 @@ import Loader from "@/components/loader";
 import { cn } from "@/lib/utils";
 import UserAvatar from "@/components/user-avatar";
 import BotAvatar from "@/components/bot-avatar";
+import { useProModal } from "@/hooks/use-pro-modal";
+import toast from "react-hot-toast";
 
 export default function ConversationPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<InputContent[]>([]);
+
+  const proModal = useProModal();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,13 +46,18 @@ export default function ConversationPage() {
 
       const response = await axios.post("/api/conversation", {
         messages,
-        userMessage
+        userMessage,
       });
 
       setMessages((current) => [...current, userMessage, response.data]);
 
       form.reset();
     } catch (error: any) {
+      if (error?.response?.status === 403) {
+        proModal.onOpen();
+      } else {
+        toast.error("Something went wrong");
+      }
       console.log(error);
     } finally {
       router.refresh();

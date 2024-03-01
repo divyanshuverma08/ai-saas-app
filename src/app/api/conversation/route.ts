@@ -3,12 +3,13 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { increaseApiLimit, checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription } from "@/lib/subscription";
 
 const genAI = new GoogleGenerativeAI(process.env["GOOGLE_API_KEY"] as string);
 
 export async function POST(req: Request) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
 
     const { userId } = auth();
     const body = await req.json();
@@ -24,28 +25,30 @@ export async function POST(req: Request) {
 
     if (!messages) {
       return new NextResponse("Messages are required", { status: 400 });
-    } 
+    }
 
     const freeTrial = await checkApiLimit();
+    const isPro = await checkSubscription();
 
-    if(!freeTrial){
-      return new NextResponse("Free trial has expired",{
-        status: 403
+    if (!freeTrial && !isPro) {
+      return new NextResponse("Free trial has expired", {
+        status: 403,
       });
     }
 
     const chat = model.startChat({
-        history: messages,
+      history: messages,
     });
 
     const result = await chat.sendMessage(userMessage.parts);
     const response = await result.response;
     const text = response.text();
 
-    await increaseApiLimit();
-    
-    return NextResponse.json({role:'model',parts: text});
+    if (!isPro) {
+      await increaseApiLimit();
+    }
 
+    return NextResponse.json({ role: "model", parts: text });
   } catch (error) {
     console.log("[CONVERSATIONAL_ERROR]", error);
     return new NextResponse("Internal error", { status: 500 });

@@ -25,11 +25,15 @@ import Loader from "@/components/loader";
 import { cn } from "@/lib/utils";
 import { Card, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
+import { useProModal } from "@/hooks/use-pro-modal";
+import toast from "react-hot-toast";
 
 export default function ImagePage() {
   const router = useRouter();
 
   const [images, setImages] = useState<string[]>([]);
+
+  const proModal = useProModal();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,6 +56,11 @@ export default function ImagePage() {
 
       form.reset();
     } catch (error: any) {
+      if (error?.response?.status === 403) {
+        proModal.onOpen();
+      } else {
+        toast.error("Something went wrong");
+      }
       console.log(error);
     } finally {
       router.refresh();
@@ -168,7 +177,11 @@ export default function ImagePage() {
                   <Image alt="Image" fill src={src} />
                 </div>
                 <CardFooter className="p-2">
-                  <Button variant="secondary" className="w-full" onClick={()=>window.open(src)}>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => window.open(src)}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </Button>

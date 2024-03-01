@@ -15,10 +15,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Empty from "@/components/empty";
 import Loader from "@/components/loader";
+import { useProModal } from "@/hooks/use-pro-modal";
+import toast from "react-hot-toast";
 
 export default function VideoPage() {
   const router = useRouter();
   const [video, setVideo] = useState<string>();
+
+  const proModal = useProModal();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,6 +43,11 @@ export default function VideoPage() {
 
       form.reset();
     } catch (error: any) {
+      if (error?.response?.status === 403) {
+        proModal.onOpen();
+      } else {
+        toast.error("Something went wrong");
+      }
       console.log(error);
     } finally {
       router.refresh();
@@ -93,7 +102,10 @@ export default function VideoPage() {
           )}
           {!video && !isLoading && <Empty label="No video generated" />}
           {video && (
-            <video className="w-full aspect-video mt-8 rounded-lg border bg-black" controls>
+            <video
+              className="w-full aspect-video mt-8 rounded-lg border bg-black"
+              controls
+            >
               <source src={video} />
             </video>
           )}
