@@ -15,7 +15,7 @@ import {
   Settings,
   VideoIcon,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import FreeCounter from "./free-counter";
 
 const montserrat = Montserrat({ weight: "600", subsets: ["latin"] });
@@ -67,10 +67,16 @@ const routes = [
 interface SidebarProps {
   apiLimitCount: number;
   isPro: boolean;
+  SheetClose?: any;
 }
 
-export default function Sidebar({ apiLimitCount = 0, isPro = false }: SidebarProps) {
+export default function Sidebar({
+  apiLimitCount = 0,
+  isPro = false,
+  SheetClose,
+}: SidebarProps) {
   const pathName = usePathname();
+  const router = useRouter();
 
   return (
     <div className="space-y-4 py-4 flex flex-col h-full bg-[#111827] text-white">
@@ -84,23 +90,41 @@ export default function Sidebar({ apiLimitCount = 0, isPro = false }: SidebarPro
           </h1>
         </Link>
         <div className="space-y-1">
-          {routes.map((route) => (
-            <Link
-              href={route.href}
-              key={route.href}
-              className={cn(
-                "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
-                pathName === route.href
-                  ? "text-white bg-white/10"
-                  : "text-zinc-400"
-              )}
-            >
-              <div className="flex items-center flex-1">
-                <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
-                {route.label}
-              </div>
-            </Link>
-          ))}
+          {routes.map((route) =>
+            SheetClose ? (
+              <SheetClose
+                onClick={() => router.push(route.href)}
+                key={route.href}
+                className={cn(
+                  "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
+                  pathName === route.href
+                    ? "text-white bg-white/10"
+                    : "text-zinc-400"
+                )}
+              >
+                <div className="flex items-center flex-1">
+                  <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
+                  {route.label}
+                </div>
+              </SheetClose>
+            ) : (
+              <Link
+                href={route.href}
+                key={route.href}
+                className={cn(
+                  "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
+                  pathName === route.href
+                    ? "text-white bg-white/10"
+                    : "text-zinc-400"
+                )}
+              >
+                <div className="flex items-center flex-1">
+                  <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
+                  {route.label}
+                </div>
+              </Link>
+            )
+          )}
         </div>
       </div>
       <FreeCounter apiLimitCount={apiLimitCount} isPro={isPro} />
